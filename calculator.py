@@ -106,6 +106,54 @@ def get_food_emissions(diet_type):
     print(f"The estimated CO₂ emmissions for food diet: {emissions_kg:.2f} kg")
     return emissions_kg
 
+def suggest_reduction_plan(total_emissions, emissions_breakdown):
+
+    reduction = 0
+
+    sorted_sources = sorted(emissions_breakdown.items(), key=lambda x: x[1], reverse=True)
+
+    for source, amount in sorted_sources:
+        if amount < total_emissions * 0.05:
+            continue
+
+        if source == "flight":
+            print(f"Your Flight travel is a major contributor ({amount} kg).")
+            print("Here's a suggestion for you: Fly less often, opt for trains/buses, or offset flights.\n")
+            reduction += amount * 0.4
+
+        elif source == "vehicle":
+            print(f"Your driving contributes significantly ({amount} kg).")
+            print("Here's a suggestion for you: Carpool, walk/bike more, or consider an electric vehicle.\n")
+            reduction += amount * 0.3
+
+        elif source == "electricity":
+            print(f"Your electricity use is high ({amount} kg).")
+            print("Here's a suggestion for you: Switch to LEDs, unplug devices, or try renewable providers.\n")
+            reduction += amount * 0.25
+
+        elif source == "clothing":
+            print(f"Your clothing purchases emit ({amount} kg).")
+            print("Here's a suggestion for you: Buy fewer or second-hand clothes, and avoid fast fashion.\n")
+            reduction += amount * 0.3
+
+        elif source == "electronics":
+            print(f"Your electronics spending leads to ({amount} kg) CO₂.")
+            print("Here's a suggestion for you: Upgrade less often and repair instead of replacing.\n")
+            reduction += amount * 0.3
+
+        elif source == "food":
+            print(f"Your diet contributes ({amount} kg).")
+            print("Here's a suggestion for you: Reduce red meat, try plant-based meals more often.\n")
+            reduction += amount * 0.2
+
+    new_total = total_emissions - reduction
+
+    print(f"Your potential reduction could be: {reduction} kg CO₂")
+    print(f"Your new estimated footprint: {new_total} kg CO₂")
+    print(f"That is about a {100 * reduction / total_emissions}% decrease in emissions!\n")
+
+    return new_total
+
 def main():
     print("Welcome to 4Earths' Carbon Footprint Calculator")
     print("0. Estimate all emmissions")
@@ -116,6 +164,14 @@ def main():
     print("5. Estimate electronics emissions")
     print("6. Estimate food emissions")
     choice = input("Please choose an option (0/1/2/...):: ")
+
+    total_emissions = 0
+    flight_emissions = 0
+    vehicle_emissions = 0
+    electricity_emissions = 0
+    clothing_emissions = 0
+    electronics_emissions = 0
+    food_emissions = 0
 
     if choice == "0":
         departure_airport = input("Enter the departure airport ICAO code (Example: JFK):: ")
@@ -129,9 +185,18 @@ def main():
         electronics_cost = float(input("Enter monthly electronics expenditure in USD:: "))
         diet_type = input("Enter your diet type (omnivore/vegetarian/vegan), default omnivore:: ") or "omnivore"
         print("_______________________________________________________________________")
-        total_emmissions = + get_vehicle_emissions_api(make) + get_flight_emissions_api(departure_airport, arrival_airport, passengers_count) + get_electricity_emissions_api(country, state, consumption_kwh) + get_clothing_emissions(clothing_cost) + get_electronics_emissions(electronics_cost) + get_food_emissions(diet_type)
+        
+        vehicle_emissions = get_vehicle_emissions_api(make)
+        flight_emissions = get_flight_emissions_api(departure_airport, arrival_airport, passengers_count)
+        electricity_emissions = get_electricity_emissions_api(country, state, consumption_kwh)
+        clothing_emissions = get_clothing_emissions(clothing_cost)
+        electronics_emissions = get_electronics_emissions(electronics_cost)
+        food_emissions = get_food_emissions(diet_type)
+
+        total_emissions = vehicle_emissions + flight_emissions + electricity_emissions + clothing_emissions + electronics_emissions + food_emissions
+
         print("_______________________________________________________________________")
-        print("The total estimated CO₂ emmissions for all categories is :", total_emmissions, "kg")
+        print("The total estimated CO₂ emmissions for all categories is :", total_emissions, "kg")
         print("_______________________________________________________________________")
 
     elif choice == "1":
@@ -139,36 +204,63 @@ def main():
         arrival_airport = input("Enter the arrival airport ICAO code (Example: SEA):: ")
         passengers_count = 1
         print("_______________________________________________________________________")
-        get_flight_emissions_api(departure_airport, arrival_airport, passengers_count)
+        flight_emissions = get_flight_emissions_api(departure_airport, arrival_airport, passengers_count)
+        total_emissions = flight_emissions
 
     elif choice == "2":
         make = input("Enter the vehicle make (Example: Toyota):: ").capitalize()
         print("_______________________________________________________________________")
-        get_vehicle_emissions_api(make)
+        vehicle_emissions = get_vehicle_emissions_api(make)
+        total_emissions = vehicle_emissions
+
     elif choice == "3":
         country = input("Enter country code (Example: US):: ").upper()
         state = input("Enter state code (Example: CA):: ").upper()
         consumption_kwh = float(input("Enter monthly electricity consumption (in kWh):: "))
         print("_______________________________________________________________________")
-        get_electricity_emissions_api(country, state, consumption_kwh)
+        electricity_emissions = get_electricity_emissions_api(country, state, consumption_kwh)
+        total_emissions = electricity_emissions
 
     elif choice == "4":
         clothing_cost = float(input("Enter the monthly clothing expenditure (in USD):: "))
         print("_______________________________________________________________________")
-        get_clothing_emissions(clothing_cost)
+        clothing_emissions = get_clothing_emissions(clothing_cost)
+        total_emissions = clothing_emissions
 
     elif choice == "5":
         electronics_cost = float(input("Enter monthly electronics expenditure in USD:: "))
         print("_______________________________________________________________________")
-        get_electronics_emissions(electronics_cost)
+        electricity_emissions = get_electronics_emissions(electronics_cost)
+        total_emissions = electricity_emissions
 
     elif choice == "6":
         diet_type = input("Enter your diet type (omnivore/vegetarian/vegan), default omnivore:: ") or "omnivore"
         print("_______________________________________________________________________")
-        get_food_emissions(diet_type)
+        food_emissions = get_food_emissions(diet_type)
+        total_emissions = food_emissions
 
     else:
         print("Invalid choice.")
+
+    print("_______________________________________________________________________")
+    print("_______________________________________________________________________")
+    print("Reduced Emissions Plan Details")
+    print("_______________________________________________________________________")
+    print("_______________________________________________________________________")
+
+    emissions_breakdown = {
+        "vehicle": vehicle_emissions,
+        "flight": flight_emissions,
+        "electricity": electricity_emissions,
+        "clothing": clothing_emissions,
+        "electronics": electronics_emissions,
+        "food": food_emissions
+    }
+
+    total_emissions = sum(emissions_breakdown.values())
+
+
+    suggest_reduction_plan(total_emissions, emissions_breakdown)
 
 if __name__ == "__main__":
     main()
